@@ -1,33 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
 #include <pty.h>
-#include "include/args.h"
-
-typedef void (* parseFunc)();
-
-programConfig handle_args(int, char**);
-
+#include "include/main.h"
 
 int main(int argc, char* argv[]) {
-     
     programConfig cfg = handle_args(argc, argv);
+    int fd;
 
-    int masterFD;
+    // child: runs Python on PTY (REPL)
+    if (!forkpty(&fd, NULL, NULL, NULL)) runPTY(cfg.shell);
 
-    if (!forkpty(&masterFD, NULL, NULL, NULL)) {
-        // child: runs Python on PTY (REPL)
-        execlp("python", "python", NULL);
-        perror("execlp");
-        exit(1);
-    }
+    // Parent: log and parse session
+    log_raw_data(fd);
 
-    // Parent: parser
-    //log_raw_data(&masterFD);
-
-    switch(argv[1][1]) {
-        default: perror("invalid argument trigger");
-    }
+    parsers[cfg.output](cfg.shell);
 
     return 0;
 }
