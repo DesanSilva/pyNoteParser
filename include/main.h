@@ -6,7 +6,8 @@
 #define NULL 0
 
 programConfig handle_args(int, char**);
-void runPTY(uint8_t);
+void setup_PTY(void);
+void run_PTY(uint8_t);
 void log_raw_data(int);
 
 typedef void (* parseFunc)(uint8_t);

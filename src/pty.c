@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 #include "../include/types.h"
 
-void runPTY(int shell) {
+void run_PTY(int shell) {
     switch(shell) {
         case PYTHON: execlp("python3", "python3", (char*)NULL); break;
         case PYSPARK: execlp("pyspark", "pyspark", (char*)NULL); break;
@@ -15,7 +16,6 @@ UNKNOWN_SHELL:
     fprintf(stderr, "shell type undefined");
     exit(EXIT_FAILURE);
 }
-
 
 void log_raw_data(int fdMaster) {
     fd_set fds;
@@ -33,10 +33,18 @@ void log_raw_data(int fdMaster) {
 
         if (select(maxfd, &fds, NULL, NULL, NULL) < 0) goto SELECT_ERR;
 
-        // user input
+        // child: stdin user input
         if (FD_ISSET(STDIN_FILENO, &fds)) {
             int bytesRead = read(STDIN_FILENO, buf, sizeof(buf));
-            if (bytesRead <= 0) break;
+
+            if (!bytesRead){
+                // Ctrl+D stopped by user
+                close(fdMaster);
+                break;
+            }
+
+            if (bytesRead < 0) goto STDIN_READ_ERR;
+
             write(fdMaster, buf, bytesRead);
         }
 
@@ -44,15 +52,17 @@ void log_raw_data(int fdMaster) {
         if (FD_ISSET(fdMaster, &fds)) {
             int bytesRead = read(fdMaster, buf, sizeof(buf));
             if (!bytesRead) break;  // child exited
-            if (bytesRead < 0) goto PY_READ_ERR;
+            if (bytesRead < 0) goto STDOUT_READ_ERR;
 
             write(STDOUT_FILENO, buf, bytesRead);
             fwrite(buf, 1, bytesRead, logPtr);
         }
     }
 
-PY_READ_ERR:
+STDOUT_READ_ERR:
+STDIN_READ_ERR:
 SELECT_ERR: 
+    fflush(logPtr);
     fclose(logPtr);
 FILE_READ_ERR: return;
 }
