@@ -17,6 +17,42 @@ UNKNOWN_SHELL:
 }
 
 
-void log_raw_data(int fd) {
+void log_raw_data(int fdMaster) {
+    fd_set fds;
+    char buf[1024];
+    
+    FILE *logPtr = fopen("session.log", "w");
+    if (!logPtr) goto FILE_READ_ERR;
 
+    while (1) {
+        FD_ZERO(&fds);
+        FD_SET(STDIN_FILENO, &fds);
+        FD_SET(fdMaster, &fds);
+
+        int maxfd = (fdMaster > STDIN_FILENO ? fdMaster : STDIN_FILENO) + 1;
+
+        if (select(maxfd, &fds, NULL, NULL, NULL) < 0) goto SELECT_ERR;
+
+        // user input
+        if (FD_ISSET(STDIN_FILENO, &fds)) {
+            int bytesRead = read(STDIN_FILENO, buf, sizeof(buf));
+            if (bytesRead <= 0) break;
+            write(fdMaster, buf, bytesRead);
+        }
+
+        // python output
+        if (FD_ISSET(fdMaster, &fds)) {
+            int bytesRead = read(fdMaster, buf, sizeof(buf));
+            if (!bytesRead) break;  // child exited
+            if (bytesRead < 0) goto PY_READ_ERR;
+
+            write(STDOUT_FILENO, buf, bytesRead);
+            fwrite(buf, 1, bytesRead, logPtr);
+        }
+    }
+
+PY_READ_ERR:
+SELECT_ERR: 
+    fclose(logPtr);
+FILE_READ_ERR: return;
 }
