@@ -1,27 +1,22 @@
 CC = gcc
 
-SRC = main.c $(wildcard src/*.c) 
-OBJ = $(patsubst %.c, build/%.o, $(notdir $(SRC)))
-TARGET = build/pyNoteParser
+CFLAGS = -Wall -O2 -Iinclude
+SRC = $(wildcard src/*.c) 
+OBJ = $(patsubst %.c, build/obj/%.o, $(notdir $(SRC)))
+BIN = build/pyNoteParser
 
-all: build $(TARGET)
+all: $(BIN)
 
-build:
+$(BIN): $(OBJ)
 	mkdir -p build
+	$(CC) $(CFLAGS) -o $@ $^
 
-# main.c object file
-build/%.o: %.c
-	$(CC) -c $< -o $@
+build/obj/%.o: src/%.c
+	mkdir -p build/obj
+	$(CC) $(CFLAGS) -c $< -o $@
 
-# src/ directory files
-build/%.o: src/%.c
-	$(CC) -c $< -o $@
-
-$(TARGET): $(OBJ)
-	$(CC) $^ -o $@
-
-run: $(TARGET)
-	@./$(TARGET)
+run: $(BIN)
+	@./$(BIN)
 
 clean:
 	rm -rf build

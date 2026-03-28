@@ -22,13 +22,15 @@ programConfig handle_args(int argc, char* argv[]) {
             case 's': 
                 if (!strcmp(optarg, "python3")) cfg.shell = PYTHON;
                 else if (!strcmp(optarg, "pyspark")) cfg.shell = PYSPARK;
-                else goto INVALID_SHELL; break;
+                else goto INVALID_SHELL; 
+                break;
 
             case 'o': 
                 if(!strcmp(optarg, "txt")) cfg.output = TXT;
                 else if(!strcmp(optarg, "notebook")) cfg.output = NOTEBOOK;
                 else if(!strcmp(optarg, "markdown")) cfg.output = MARKDOWN;
-                else goto INVALID_OUTPUT; break;
+                else goto INVALID_OUTPUT; 
+                break;
                 
             case 'v':
                 print_version();

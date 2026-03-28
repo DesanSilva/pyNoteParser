@@ -59,6 +59,7 @@ void log_raw_data(int fdMaster) {
         }
     }
 
+WRITE_ERR:
 STDOUT_READ_ERR:
 STDIN_READ_ERR:
 SELECT_ERR: 
